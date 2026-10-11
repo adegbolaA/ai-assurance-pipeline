@@ -1,6 +1,6 @@
 """Model gateway — the only module allowed to call a model provider.
 
-Semgrep rule `aigg-bedrock-outside-gateway` enforces that. The gateway also
+Semgrep rule `aap-bedrock-outside-gateway` enforces that. The gateway also
 refuses to start if the configured model is not approved in the registry, so
 the governance check holds at runtime as well as in CI.
 """
@@ -53,7 +53,7 @@ class MockBackend:
     Used on pull requests so the red-team evals run offline and for free. It
     deliberately behaves the way a weak model does — it obeys instructions it
     finds anywhere in its prompt — so the evals can prove the pipeline catches
-    the planted AIGG-LAB weaknesses. Releases are evaluated against the real
+    the planted AAP-LAB weaknesses. Releases are evaluated against the real
     model instead.
     """
 

@@ -24,7 +24,7 @@ def sha256(path: Path) -> str:
 
 
 def props(**kv) -> list[dict]:
-    return [{"name": f"aigg:{k}", "value": str(v)} for k, v in kv.items() if v is not None]
+    return [{"name": f"aap:{k}", "value": str(v)} for k, v in kv.items() if v is not None]
 
 
 def model_component(m: dict, entry: dict) -> dict:

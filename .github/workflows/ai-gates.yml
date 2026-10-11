@@ -1,4 +1,4 @@
-name: AI Governance Gates
+name: AI Assurance Gates
 
 # Runs on every PR, and is called by release.yml so a release runs exactly the
 # same gates. Each job writes its result to gate-results/ and uploads it as a
@@ -80,7 +80,7 @@ jobs:
           name: gate-code-policy
           path: gate-results/
 
-  # ── App tests: runtime registry enforcement, AIGG-LAB-04 guard ──────────────
+  # ── App tests: runtime registry enforcement, AAP-LAB-04 guard ──────────────
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-latest
@@ -155,12 +155,12 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build app image
-        run: docker build -f app/Dockerfile --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} -t aigg-app:ci .
+        run: docker build -f app/Dockerfile --build-arg BASE_IMAGE=${{ env.BASE_IMAGE }} -t aap-app:ci .
 
       - name: Trivy CVE gate
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: aigg-app:ci
+          image-ref: aap-app:ci
           format: table
           exit-code: '1'
           severity: CRITICAL,HIGH
@@ -169,7 +169,7 @@ jobs:
       - name: Start app (mock model, hardened runtime flags)
         run: |
           docker run -d --name app -p 8000:8000 -e LLM_BACKEND=mock \
-            --read-only --cap-drop ALL --security-opt no-new-privileges aigg-app:ci
+            --read-only --cap-drop ALL --security-opt no-new-privileges aap-app:ci
           for _ in $(seq 1 30); do curl -sf localhost:8000/health && exit 0; sleep 1; done
           docker logs app; exit 1
 

@@ -17,9 +17,9 @@ RUN python3 -m venv --without-pip /opt/venv && \
     pip --python /opt/venv/bin/python install --no-cache-dir --require-hashes -r /tmp/requirements.txt
 
 FROM ${BASE_IMAGE}
-LABEL org.opencontainers.image.source="https://github.com/adegbolaA/ai-governance-gate"
+LABEL org.opencontainers.image.source="https://github.com/adegbolaA/ai-assurance-pipeline"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.description="Benefits Caseworker Assistant — AI governance gate reference app"
+LABEL org.opencontainers.image.description="Benefits Caseworker Assistant — AI assurance pipeline reference app"
 
 COPY --from=builder /opt/venv /opt/venv
 COPY app/src /app/src

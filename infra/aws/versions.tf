@@ -17,7 +17,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      project    = "ai-governance-gate"
+      project    = "ai-assurance-pipeline"
       managed-by = "terraform"
       repo       = var.github_repository
     }

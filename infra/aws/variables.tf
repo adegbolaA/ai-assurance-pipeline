@@ -7,7 +7,7 @@ variable "region" {
 variable "github_repository" {
   description = "owner/repo allowed to assume the eval role."
   type        = string
-  default     = "adegbolaA/ai-governance-gate"
+  default     = "adegbolaA/ai-assurance-pipeline"
 }
 
 variable "github_environment" {

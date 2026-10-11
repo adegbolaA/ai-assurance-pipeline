@@ -1,4 +1,4 @@
-# ai-governance-gate
+# ai-assurance-pipeline
 
 **An automated checkpoint system that makes every change to an AI application prove it is approved, safe and documented before it can go live — and produces a signed report an auditor can check.**
 
@@ -117,6 +117,7 @@ This is the same kind of evidence agencies assemble for an **Authorization to Op
 
 | Term | Meaning |
 |---|---|
+| **Assurance** | Proof, backed by evidence someone else can check, that something meets its requirements — hence the name *AI assurance pipeline* |
 | **Pull request (PR)** | A proposed change, waiting for checks and review before it's accepted |
 | **Pipeline / CI** | The automated process that runs the checkpoints |
 | **Release** | Publishing a new version that can be deployed |
@@ -202,10 +203,10 @@ Every scanner gate has a **negative control** — a test proving it fires on a p
 
 | ID | OWASP LLM | MITRE ATLAS | Where | Caught by |
 |---|---|---|---|---|
-| `AIGG-LAB-01` | LLM07 System Prompt Leakage | AML.T0056 | secret in system prompt | promptfoo canary check |
-| `AIGG-LAB-02` | LLM01 Prompt Injection (indirect) | AML.T0051.001 | poisoned `faq-community-submitted.md` | promptfoo |
-| `AIGG-LAB-03` | LLM05 Improper Output Handling | AML.T0051.000 | unescaped HTML response | promptfoo |
-| `AIGG-LAB-04` | LLM10 Unbounded Consumption | AML.T0034 | no input / `max_tokens` cap | pytest `xfail(strict=True)` |
+| `AAP-LAB-01` | LLM07 System Prompt Leakage | AML.T0056 | secret in system prompt | promptfoo canary check |
+| `AAP-LAB-02` | LLM01 Prompt Injection (indirect) | AML.T0051.001 | poisoned `faq-community-submitted.md` | promptfoo |
+| `AAP-LAB-03` | LLM05 Improper Output Handling | AML.T0051.000 | unescaped HTML response | promptfoo |
+| `AAP-LAB-04` | LLM10 Unbounded Consumption | AML.T0034 | no input / `max_tokens` cap | pytest `xfail(strict=True)` |
 
 `evals/known-findings.yaml` is the POA&M. The eval gate lets a listed finding fail (accepted and tracked), blocks anything else, and flags a listed finding once its tests pass so the item gets closed. Fixing a planted weakness is the intended exercise.
 
@@ -226,10 +227,10 @@ Verify (cosign v3 — v2 does not read the bundle format and reports "no signatu
 
 ```bash
 cosign verify-blob evidence-0.1.42.tar.gz --bundle evidence-0.1.42.sigstore.json \
-  --certificate-identity-regexp 'https://github.com/.+/ai-governance-gate/' \
+  --certificate-identity-regexp 'https://github.com/.+/ai-assurance-pipeline/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-cosign verify-attestation --type cyclonedx ghcr.io/<owner>/ai-governance-gate:0.1.42 \
-  --certificate-identity-regexp 'https://github.com/.+/ai-governance-gate/' \
+cosign verify-attestation --type cyclonedx ghcr.io/<owner>/ai-assurance-pipeline:0.1.42 \
+  --certificate-identity-regexp 'https://github.com/.+/ai-assurance-pipeline/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
@@ -237,8 +238,8 @@ cosign verify-attestation --type cyclonedx ghcr.io/<owner>/ai-governance-gate:0.
 
 ```bash
 # Base image (from hardened-base): make build IMAGE=python-ml-base, then tag it
-docker build -f app/Dockerfile --build-arg BASE_IMAGE=python-ml-base:local -t aigg-app:local .
-docker run -d -p 8000:8000 -e LLM_BACKEND=mock --read-only --cap-drop ALL aigg-app:local
+docker build -f app/Dockerfile --build-arg BASE_IMAGE=python-ml-base:local -t aap-app:local .
+docker run -d -p 8000:8000 -e LLM_BACKEND=mock --read-only --cap-drop ALL aap-app:local
 
 npx promptfoo@0.124.1 eval -c evals/promptfooconfig.yaml -o promptfoo-results.json
 python scripts/eval_gate.py promptfoo-results.json evals/known-findings.yaml -o gate-results/evals.json --backend mock
@@ -264,7 +265,7 @@ pip install pre-commit && pre-commit install   # hygiene, gitleaks, ruff, terraf
 Terraform for the release evals' AWS access — no long-lived keys anywhere:
 
 - GitHub OIDC identity provider (account-wide, `prevent_destroy`)
-- Role `ai-governance-gate-bedrock-eval`, trusting **only** the exact subject `repo:adegbolaA/ai-governance-gate:environment:ai-eval`. The `ai-eval` environment is restricted to `main`, so branches, PRs and forks cannot assume it
+- Role `ai-governance-gate-bedrock-eval` (name kept from the project's earlier name; renaming an IAM role replaces it and changes its ARN), trusting **only** the exact subject `repo:adegbolaA/ai-assurance-pipeline:environment:ai-eval`. The `ai-eval` environment is restricted to `main`, so branches, PRs and forks cannot assume it
 - Inline policy: `bedrock:InvokeModel` on the models in `var.model_ids` — keep it in step with the approved entries in `models/registry.yaml`
 
 ```bash

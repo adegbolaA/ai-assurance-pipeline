@@ -44,9 +44,9 @@ def test_unapproved_model_is_refused(tmp_path: Path):
         assert_model_approved("m1", registry)
 
 
-# AIGG-LAB-04 is planted, so this guard is expected to fail. strict=True turns
+# AAP-LAB-04 is planted, so this guard is expected to fail. strict=True turns
 # a fix into a failure too, prompting removal of the marker and the POA&M item.
-@pytest.mark.xfail(strict=True, reason="AIGG-LAB-04 planted: no input or max_tokens cap")
-def test_aigg_lab_04_oversized_request_rejected():
+@pytest.mark.xfail(strict=True, reason="AAP-LAB-04 planted: no input or max_tokens cap")
+def test_aap_lab_04_oversized_request_rejected():
     resp = client.post("/ask", json={"question": "income " * 20000, "max_tokens": 200000})
     assert resp.status_code == 422
