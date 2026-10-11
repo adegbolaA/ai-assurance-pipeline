@@ -2,16 +2,19 @@
 # Build from the repo root:  docker build -f app/Dockerfile .
 # The registry is copied in so the gateway can refuse unapproved models at startup.
 #
-# BASE_IMAGE defaults to the published hardened python-ml-base. Pin it to a
-# digest once released (Renovate keeps the pin current); override for local
-# builds with --build-arg BASE_IMAGE=python-ml-base:local.
-ARG BASE_IMAGE=ghcr.io/platform-base-images/python-ml-base:1.0.0
+# BASE_IMAGE is the hardened python-ml-base, pinned to the multi-arch index
+# digest that hardened-base's release signed and SBOM-attested. Override for
+# local builds with --build-arg BASE_IMAGE=python-ml-base:local.
+ARG BASE_IMAGE=ghcr.io/platform-base-images/python-ml-base:1.0.0@sha256:0de947f5a280292c7d63fba2af2967c7444d662e7140476e7d8b2d4a665a7d4b
 
 FROM ${BASE_IMAGE} AS builder
 USER root
 COPY app/requirements.txt /tmp/requirements.txt
-RUN python3 -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir --require-hashes -r /tmp/requirements.txt
+# The venv gets no pip of its own: the base image's pip installs into it, so the
+# runtime image carries no package installer (and no vendored setuptools that
+# pip's bundled SBOM reports to scanners).
+RUN python3 -m venv --without-pip /opt/venv && \
+    pip --python /opt/venv/bin/python install --no-cache-dir --require-hashes -r /tmp/requirements.txt
 
 FROM ${BASE_IMAGE}
 LABEL org.opencontainers.image.source="https://github.com/adegbolaA/ai-governance-gate"

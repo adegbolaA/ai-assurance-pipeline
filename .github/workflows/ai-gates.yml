@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_IMAGE: ghcr.io/platform-base-images/python-ml-base:1.0.0
+  BASE_IMAGE: ghcr.io/platform-base-images/python-ml-base:1.0.0@sha256:0de947f5a280292c7d63fba2af2967c7444d662e7140476e7d8b2d4a665a7d4b
 
 jobs:
   # ── Inventory, registration and provider policy ─────────────────────────────
