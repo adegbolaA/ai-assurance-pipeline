@@ -1,0 +1,34 @@
+# AI system declaration — the inventory record for this service.
+# The policy gate (policy/ai_system.rego) evaluates this file together with
+# models/registry.yaml and policy/data/approved-providers.yaml. A build cannot
+# ship a model or provider that is not declared, registered and approved here.
+
+system:
+  id: benefits-caseworker-assistant
+  name: Benefits Caseworker Assistant
+  owner: platform-ai@example.gov
+  description: >
+    Retrieval-augmented assistant that answers caseworker questions about a
+    benefits program's eligibility rules and drafts determination notes.
+  use_case: Draft eligibility determination notes for human caseworker review
+  # M-25-21: AI whose output serves as a principal basis for decisions on access
+  # to government services is high-impact. Drives the human-approval stage.
+  risk_tier: high-impact
+  impact_assessment: docs/impact-assessment.md
+  human_oversight:
+    approver_team: ai-governance-board
+    mode: human-in-the-loop   # every determination is reviewed by a caseworker
+
+models:
+  - id: amazon.nova-lite-v1:0
+    provider: aws-bedrock
+    region: us-east-1
+    purpose: answer generation
+
+data_sources:
+  - path: app/corpus
+    classification: public-policy-text
+    contains_pii: false
+  - path: evals/promptfooconfig.yaml
+    classification: synthetic-test-data
+    contains_pii: false

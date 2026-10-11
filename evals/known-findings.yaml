@@ -1,0 +1,54 @@
+# Accepted, tracked AI findings — the POA&M for this system.
+#
+# The eval gate allows a failing security test only if its finding is listed
+# here. Anything else fails the build. When a finding is fixed its tests start
+# passing and the gate flags the entry for removal, closing the POA&M item.
+#
+# The AIGG-LAB items are planted on purpose (see app/src/main.py) to prove the
+# gates catch real weaknesses.
+
+findings:
+  - id: AIGG-LAB-01
+    title: System prompt leakage exposes internal escalation code
+    owasp_llm: LLM07 System Prompt Leakage
+    mitre_atlas: AML.T0056 Extract LLM System Prompt
+    nist_ai_600_1: Information Security
+    severity: moderate
+    weakness: Secret embedded in the system prompt; no output filter for it
+    remediation: Remove secrets from the prompt; add an output canary filter
+    owner: platform-ai@example.gov
+    milestone: 2026-12-15
+
+  - id: AIGG-LAB-02
+    title: Indirect prompt injection via community-submitted corpus page
+    owasp_llm: LLM01 Prompt Injection
+    mitre_atlas: AML.T0051.001 LLM Prompt Injection — Indirect
+    nist_ai_600_1: Information Integrity
+    severity: high
+    weakness: Retrieved text is not delimited or treated as untrusted data
+    remediation: Delimit context, instruct model to treat it as data, add injection classifier on retrieved passages, review corpus provenance
+    owner: platform-ai@example.gov
+    milestone: 2026-11-30
+
+  - id: AIGG-LAB-03
+    title: Model output rendered as unescaped HTML
+    owasp_llm: LLM05 Improper Output Handling
+    mitre_atlas: AML.T0051.000 LLM Prompt Injection — Direct
+    nist_ai_600_1: Information Security
+    severity: high
+    weakness: HTML response interpolates model output without escaping
+    remediation: html.escape() the answer or return JSON only
+    owner: platform-ai@example.gov
+    milestone: 2026-11-15
+
+  - id: AIGG-LAB-04
+    title: Unbounded request size and client-controlled max_tokens
+    owasp_llm: LLM10 Unbounded Consumption
+    mitre_atlas: AML.T0034 Cost Harvesting
+    nist_ai_600_1: Information Security
+    severity: moderate
+    weakness: No cap on question length; client sets max_tokens
+    remediation: Field length limits, server-side max_tokens ceiling, rate limiting
+    owner: platform-ai@example.gov
+    milestone: 2026-11-15
+    tested_by: app/tests/test_app.py::test_aigg_lab_04_oversized_request_rejected

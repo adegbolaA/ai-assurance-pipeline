@@ -1,0 +1,96 @@
+# Gate → control mapping used to build each release's evidence package.
+#
+# Frameworks:
+#   nist_ai_rmf    NIST AI RMF 1.0 subcategories (GOVERN / MAP / MEASURE / MANAGE)
+#   nist_ai_600_1  NIST AI 600-1 Generative AI Profile — GAI risk categories
+#   owasp_llm      OWASP Top 10 for LLM Applications (2025)
+#   mitre_atlas    MITRE ATLAS techniques the gate helps detect or prevent
+#   nist_800_53    SP 800-53 Rev 5 controls — the bridge into an RMF/ATO package
+#   omb_m_25_21    Minimum risk management practices for high-impact AI
+#
+# Mappings are a starting point for an assessor. Verify IDs against the
+# framework versions your authorizing official uses.
+
+gates:
+  policy:
+    name: AI inventory, registration and provider policy (OPA/Conftest)
+    evidence: gate-results/policy.json
+    nist_ai_rmf: [GOVERN 1.6, GOVERN 6.1, MAP 4.1]
+    nist_ai_600_1: [Value Chain and Component Integration]
+    owasp_llm: [LLM03 Supply Chain]
+    mitre_atlas: [AML.T0010 ML Supply Chain Compromise]
+    nist_800_53: [CM-8, SA-4, SR-3, SR-5]
+    omb_m_25_21: [AI use case inventory, Determination of high-impact use]
+
+  code-policy:
+    name: Code-level AI provider and deserialization rules (Semgrep)
+    evidence: gate-results/semgrep.json
+    nist_ai_rmf: [GOVERN 6.1, MEASURE 2.7]
+    nist_ai_600_1: [Information Security, Value Chain and Component Integration]
+    owasp_llm: [LLM03 Supply Chain]
+    mitre_atlas: [AML.T0010 ML Supply Chain Compromise]
+    nist_800_53: [SA-11, SA-15, CM-7]
+
+  modelscan:
+    name: Model artifact deserialization scan (ModelScan) with negative control
+    evidence: gate-results/modelscan.json
+    nist_ai_rmf: [MAP 4.1, MEASURE 2.7, MANAGE 3.1]
+    nist_ai_600_1: [Information Security, Value Chain and Component Integration]
+    owasp_llm: [LLM03 Supply Chain, LLM04 Data and Model Poisoning]
+    mitre_atlas: [AML.T0010 ML Supply Chain Compromise, AML.T0018 Backdoor ML Model]
+    nist_800_53: [SR-4, SR-11, SI-7, RA-5]
+
+  pii:
+    name: Training/eval/corpus data PII scan (Presidio) with negative control
+    evidence: gate-results/pii.json
+    nist_ai_rmf: [MAP 4.1, MEASURE 2.10]
+    nist_ai_600_1: [Data Privacy]
+    owasp_llm: [LLM02 Sensitive Information Disclosure]
+    mitre_atlas: [AML.T0057 LLM Data Leakage]
+    nist_800_53: [PT-2, PT-3, SI-12, RA-8]
+
+  evals:
+    name: Red-team and accuracy evals (promptfoo) against the running system
+    evidence: gate-results/evals.json
+    nist_ai_rmf: [MEASURE 2.1, MEASURE 2.3, MEASURE 2.7, MANAGE 1.3]
+    nist_ai_600_1: [Information Security, Information Integrity, Confabulation]
+    owasp_llm: [LLM01 Prompt Injection, LLM05 Improper Output Handling, LLM06 Excessive Agency, LLM07 System Prompt Leakage]
+    mitre_atlas: [AML.T0051 LLM Prompt Injection, AML.T0056 Extract LLM System Prompt]
+    nist_800_53: [CA-2, CA-8, SA-11, SI-10, SI-15]
+    omb_m_25_21: [Pre-deployment testing in a real-world context]
+
+  unit-tests:
+    name: Application tests incl. runtime registry enforcement and LAB-04 guard
+    evidence: gate-results/pytest.xml
+    nist_ai_rmf: [MEASURE 2.3]
+    owasp_llm: [LLM10 Unbounded Consumption]
+    mitre_atlas: [AML.T0034 Cost Harvesting, AML.T0029 Denial of ML Service]
+    nist_800_53: [SA-11, SC-5]
+
+  mlbom:
+    name: CycloneDX ML-BOM — model, card, approval and data lineage hashes
+    evidence: ai-system.mlbom.json
+    nist_ai_rmf: [GOVERN 1.6, MAP 4.1]
+    nist_ai_600_1: [Value Chain and Component Integration]
+    owasp_llm: [LLM03 Supply Chain]
+    nist_800_53: [CM-8, SR-4]
+
+  signing:
+    name: Cosign keyless signature + ML-BOM attestation on the image; signed evidence bundle
+    evidence: gate-results/signing.json
+    nist_ai_rmf: [MANAGE 3.1]
+    owasp_llm: [LLM03 Supply Chain]
+    mitre_atlas: [AML.T0010 ML Supply Chain Compromise]
+    nist_800_53: [SR-4, SI-7, AU-10]
+
+  human-approval:
+    name: AI governance board approval for high-impact releases (GitHub Environment)
+    evidence: gate-results/approval.json
+    nist_ai_rmf: [GOVERN 1.3, MAP 3.5, MANAGE 1.1]
+    nist_800_53: [CA-6, CM-3, PM-10]
+    omb_m_25_21: [Human oversight, Accountability before deployment]
+
+poam:
+  source: evals/known-findings.yaml
+  nist_800_53: [CA-5]
+  nist_ai_rmf: [MANAGE 1.3, MANAGE 4.1]

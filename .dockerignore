@@ -1,0 +1,6 @@
+*
+!app/requirements.txt
+!app/src/**
+!app/corpus/**
+!models/registry.yaml
+app/src/**/__pycache__

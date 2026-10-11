@@ -1,0 +1,10 @@
+# Providers and regions this organization has authorized for AI workloads.
+# In a federal deployment this list would track FedRAMP authorizations,
+# e.g. Bedrock in us-gov-west-1.
+approved_providers:
+  aws-bedrock:
+    regions:
+      - us-east-1
+      - us-west-2
+      - us-gov-west-1
+    authorization: FedRAMP High (GovCloud) / Moderate (commercial)

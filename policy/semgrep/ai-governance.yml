@@ -1,0 +1,73 @@
+# Code-level AI governance rules. The Rego gate checks what the system
+# *declares*; these rules check what the code actually *does*, so a developer
+# cannot bypass the registry by importing a different SDK or calling a model
+# endpoint directly.
+rules:
+  - id: aigg-unapproved-ai-sdk
+    message: >
+      Direct use of an AI provider SDK that is not on the approved list
+      (policy/data/approved-providers.yaml). Route model calls through
+      app/src/llm.py, which uses Bedrock.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      owasp-llm: LLM03 Supply Chain
+      nist-ai-rmf: GOVERN 6.1
+    pattern-either:
+      - pattern: import openai
+      - pattern: import cohere
+      - pattern: import mistralai
+      - pattern: import google.generativeai
+      - pattern: from openai import $X
+      - pattern: from google import genai
+      - pattern: from langchain_openai import $X
+
+  - id: aigg-bedrock-outside-gateway
+    message: >
+      Bedrock runtime client created outside app/src/llm.py. All model calls go
+      through the single gateway so the model ID is checked against the registry.
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude:
+        - app/src/llm.py
+    metadata:
+      nist-ai-rmf: GOVERN 1.6
+    pattern: boto3.client("bedrock-runtime", ...)
+
+  - id: aigg-hardcoded-model-endpoint
+    message: Hardcoded third-party model API endpoint. Use the approved gateway.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      owasp-llm: LLM03 Supply Chain
+    pattern-regex: https://(api\.openai\.com|generativelanguage\.googleapis\.com|api\.cohere\.ai|api\.mistral\.ai)
+
+  - id: aigg-unsafe-model-deserialization
+    message: >
+      Loading a model or object with pickle can execute arbitrary code. Use
+      safetensors/ONNX, or torch.load(..., weights_only=True).
+    severity: ERROR
+    languages: [python]
+    metadata:
+      owasp-llm: LLM03 Supply Chain
+      mitre-atlas: AML.T0010 ML Supply Chain Compromise
+    pattern-either:
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+      - pattern: joblib.load(...)
+      - pattern: dill.load(...)
+      - pattern: torch.load(..., weights_only=False, ...)
+
+  - id: aigg-remote-model-download
+    message: >
+      Downloading model weights at runtime bypasses the ModelScan and signing
+      gates. Bake reviewed weights into the image under /models instead.
+    severity: ERROR
+    languages: [python]
+    metadata:
+      mitre-atlas: AML.T0010 ML Supply Chain Compromise
+    pattern-either:
+      - pattern: $X.from_pretrained(..., trust_remote_code=True, ...)
+      - pattern: huggingface_hub.hf_hub_download(...)
+      - pattern: huggingface_hub.snapshot_download(...)

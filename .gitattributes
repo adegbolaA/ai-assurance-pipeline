@@ -1,0 +1,7 @@
+# Force LF for all text files — shell scripts and Dockerfiles must not have CRLF
+* text=auto eol=lf
+
+# Explicitly mark binary files
+*.png binary
+*.jpg binary
+*.gz  binary

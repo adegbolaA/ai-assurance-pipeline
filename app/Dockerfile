@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1
+# Build from the repo root:  docker build -f app/Dockerfile .
+# The registry is copied in so the gateway can refuse unapproved models at startup.
+#
+# BASE_IMAGE defaults to the published hardened python-ml-base. Pin it to a
+# digest once released (Renovate keeps the pin current); override for local
+# builds with --build-arg BASE_IMAGE=python-ml-base:local.
+ARG BASE_IMAGE=ghcr.io/platform-base-images/python-ml-base:1.0.0
+
+FROM ${BASE_IMAGE} AS builder
+USER root
+COPY app/requirements.txt /tmp/requirements.txt
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir --require-hashes -r /tmp/requirements.txt
+
+FROM ${BASE_IMAGE}
+LABEL org.opencontainers.image.source="https://github.com/adegbolaA/ai-governance-gate"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.description="Benefits Caseworker Assistant — AI governance gate reference app"
+
+COPY --from=builder /opt/venv /opt/venv
+COPY app/src /app/src
+COPY app/corpus /app/corpus
+COPY models/registry.yaml /app/models/registry.yaml
+
+ENV MODEL_REGISTRY=/app/models/registry.yaml \
+    PATH=/opt/venv/bin:$PATH
+USER nonroot
+EXPOSE 8000
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

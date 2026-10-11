@@ -1,0 +1,20 @@
+# Approved model registry. Every model an AI system declares must have an
+# entry here with status "approved" before the policy gate lets it ship.
+# Adding or changing an entry is a governance decision: CODEOWNERS routes
+# changes to this file to the AI governance board.
+
+models:
+  - id: amazon.nova-lite-v1:0
+    name: Amazon Nova Lite
+    provider: aws-bedrock
+    hosting: managed-api        # no weights in our supply chain
+    status: approved
+    owner: platform-ai@example.gov
+    approved_by: ai-governance-board
+    approved_on: 2026-10-10
+    review_by: 2027-04-10
+    max_risk_tier: high-impact  # highest system tier this model is cleared for
+    model_card: models/cards/amazon-nova-lite.md
+    license: AWS Service Terms
+    intended_use: Text generation for retrieval-augmented question answering
+    out_of_scope: Autonomous decisions without human review

@@ -1,0 +1,6 @@
+# Governance decisions need the AI governance board, not just a code reviewer.
+/ai-system.yaml                      @adegbolaA
+/models/                             @adegbolaA
+/policy/                             @adegbolaA
+/evals/known-findings.yaml           @adegbolaA
+/controls/                           @adegbolaA
