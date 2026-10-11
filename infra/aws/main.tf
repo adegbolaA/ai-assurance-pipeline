@@ -9,10 +9,9 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  oidc_host     = "token.actions.githubusercontent.com"
-  oidc_arn      = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_host}"
-  oidc_provider = var.manage_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : local.oidc_arn
-  model_arns    = [for id in var.model_ids : "arn:aws:bedrock:${var.region}::foundation-model/${id}"]
+  oidc_host  = "token.actions.githubusercontent.com"
+  oidc_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_host}"
+  model_arns = [for id in var.model_ids : "arn:aws:bedrock:${var.region}::foundation-model/${id}"]
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -40,9 +39,12 @@ data "aws_iam_policy_document" "trust" {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
+    # The ARN string, not a resource reference: Checkov can only recognise a
+    # GitHub OIDC trust (and run CKV_AWS_358) when the principal visibly names
+    # token.actions.githubusercontent.com. Ordering is kept by depends_on below.
     principals {
       type        = "Federated"
-      identifiers = [local.oidc_provider]
+      identifiers = [local.oidc_arn]
     }
 
     condition {
@@ -66,6 +68,8 @@ resource "aws_iam_role" "bedrock_eval" {
   description          = "GitHub Actions (${var.github_repository}, ${var.github_environment} environment) - invoke registered Bedrock model for release evals"
   assume_role_policy   = data.aws_iam_policy_document.trust.json
   max_session_duration = 3600
+
+  depends_on = [aws_iam_openid_connect_provider.github]
 }
 
 data "aws_iam_policy_document" "invoke" {
