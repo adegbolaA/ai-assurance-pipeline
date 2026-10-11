@@ -9,9 +9,15 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  oidc_host  = "token.actions.githubusercontent.com"
-  oidc_arn   = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_host}"
-  model_arns = [for id in var.model_ids : "arn:aws:bedrock:${var.region}::foundation-model/${id}"]
+  oidc_host = "token.actions.githubusercontent.com"
+  oidc_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_host}"
+  # GitHub's immutable subject format (repo:owner@id/repo@id:...), which this
+  # repo uses. The IDs survive renames and cannot be claimed by someone who
+  # later creates a repo under an old name.
+  github_owner = split("/", var.github_repository)[0]
+  github_repo  = split("/", var.github_repository)[1]
+  oidc_subject = "repo:${local.github_owner}@${var.github_owner_id}/${local.github_repo}@${var.github_repository_id}:environment:${var.github_environment}"
+  model_arns   = [for id in var.model_ids : "arn:aws:bedrock:${var.region}::foundation-model/${id}"]
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -58,7 +64,7 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.oidc_host}:sub"
-      values   = ["repo:${var.github_repository}:environment:${var.github_environment}"]
+      values   = [local.oidc_subject]
     }
   }
 }

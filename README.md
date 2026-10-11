@@ -265,7 +265,7 @@ pip install pre-commit && pre-commit install   # hygiene, gitleaks, ruff, terraf
 Terraform for the release evals' AWS access — no long-lived keys anywhere:
 
 - GitHub OIDC identity provider (account-wide, `prevent_destroy`)
-- Role `ai-governance-gate-bedrock-eval` (name kept from the project's earlier name; renaming an IAM role replaces it and changes its ARN), trusting **only** the exact subject `repo:adegbolaA/ai-assurance-pipeline:environment:ai-eval`. The `ai-eval` environment is restricted to `main`, so branches, PRs and forks cannot assume it
+- Role `ai-governance-gate-bedrock-eval` (name kept from the project's earlier name; renaming an IAM role replaces it and changes its ARN), trusting **only** the exact subject `repo:adegbolaA@117126180/ai-assurance-pipeline@1413955557:environment:ai-eval`. This is GitHub's immutable subject format, which this repo uses: the numeric owner and repo IDs survive renames and cannot be claimed by someone who later creates a repo under an old name. The `ai-eval` environment is restricted to `main`, so branches, PRs and forks cannot assume it
 - Inline policy: `bedrock:InvokeModel` on the models in `var.model_ids` — keep it in step with the approved entries in `models/registry.yaml`
 
 ```bash

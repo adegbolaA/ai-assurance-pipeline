@@ -10,6 +10,18 @@ variable "github_repository" {
   default     = "adegbolaA/ai-assurance-pipeline"
 }
 
+variable "github_owner_id" {
+  description = "Numeric ID of the repository owner (gh api users/<owner> -q .id)."
+  type        = number
+  default     = 117126180
+}
+
+variable "github_repository_id" {
+  description = "Numeric ID of the repository (gh api repos/<owner>/<repo> -q .id)."
+  type        = number
+  default     = 1413955557
+}
+
 variable "github_environment" {
   description = <<-EOT
     GitHub Environment the eval job runs in. The role trusts only this
