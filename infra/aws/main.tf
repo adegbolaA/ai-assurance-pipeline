@@ -40,6 +40,12 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 data "aws_iam_policy_document" "trust" {
+  # Checkov 3.3.26 reads the repo out of the sub claim with an owner/repo
+  # pattern that has no room for the immutable format's @id suffixes, so it
+  # rejects this exact, wildcard-free subject. The skip is that false positive
+  # only: iac.yml's mutation control removes it and proves CKV_AWS_358 still
+  # fails this policy once the :sub condition is gone.
+  #checkov:skip=CKV_AWS_358:Immutable OIDC subject (repo:owner@id/repo@id) is not parsed by Checkov
   statement {
     sid     = "GitHubActionsAiEvalEnvironmentOnly"
     effect  = "Allow"
