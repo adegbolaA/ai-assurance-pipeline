@@ -22,7 +22,7 @@ determination notes that a caseworker reviews before anything is filed.
 
 | Risk | NIST AI 600-1 category | Mitigation in this repo |
 |---|---|---|
-| Follows instructions embedded in retrieved text | Information Security | Red-team evals (`evals/`), planted `AIGG-LAB-02` |
+| Follows instructions embedded in retrieved text | Information Security | Red-team evals (`evals/`), planted `AAP-LAB-02` |
 | Confident but wrong answers | Confabulation | Answers cite retrieved sources; caseworker review |
 | Inconsistent outcomes across groups | Harmful Bias and Homogenization | Out of scope for this scaffold — add a bias eval set before production use |
 

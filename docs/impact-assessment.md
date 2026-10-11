@@ -28,10 +28,10 @@ assessment and require `pii_handling` in `ai-system.yaml`.
 
 | Risk | Mitigation | Evidence |
 |---|---|---|
-| Injected instructions in corpus alter answers (AIGG-LAB-02) | Red-team evals; corpus provenance review | `gate-results/evals.json`, POA&M |
-| Leakage of internal configuration (AIGG-LAB-01) | Evals with canary detection | `gate-results/evals.json`, POA&M |
-| Unsafe rendering of output (AIGG-LAB-03) | Evals; output encoding | `gate-results/evals.json`, POA&M |
-| Cost/availability abuse (AIGG-LAB-04) | Unit test guard; request limits | `gate-results/pytest.xml`, POA&M |
+| Injected instructions in corpus alter answers (AAP-LAB-02) | Red-team evals; corpus provenance review | `gate-results/evals.json`, POA&M |
+| Leakage of internal configuration (AAP-LAB-01) | Evals with canary detection | `gate-results/evals.json`, POA&M |
+| Unsafe rendering of output (AAP-LAB-03) | Evals; output encoding | `gate-results/evals.json`, POA&M |
+| Cost/availability abuse (AAP-LAB-04) | Unit test guard; request limits | `gate-results/pytest.xml`, POA&M |
 | Wrong or invented rules (confabulation) | Answers cite sources; accuracy evals | `gate-results/evals.json` |
 | Unapproved model swapped in | Registry policy gate + runtime refusal | `gate-results/policy.json` |
 | Disparate outcomes across groups | **Not yet tested** — bias eval set required before production | Open |

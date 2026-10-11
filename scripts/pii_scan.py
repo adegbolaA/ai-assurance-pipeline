@@ -75,7 +75,12 @@ def main() -> int:
                 findings.append({"file": str(f), **hit})
         violates = bool(findings) and not src.get("contains_pii", False)
         report["sources"].append(
-            {"path": src["path"], "declared_pii": src.get("contains_pii", False), "files_scanned": len(files), "findings": findings}
+            {
+                "path": src["path"],
+                "declared_pii": src.get("contains_pii", False),
+                "files_scanned": len(files),
+                "findings": findings,
+            }
         )
         if violates:
             report["passed"] = False

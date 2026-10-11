@@ -13,7 +13,7 @@ import hashlib
 import json
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -24,7 +24,7 @@ def sha256(path: Path) -> str:
 
 
 def props(**kv) -> list[dict]:
-    return [{"name": f"aigg:{k}", "value": str(v)} for k, v in kv.items() if v is not None]
+    return [{"name": f"aap:{k}", "value": str(v)} for k, v in kv.items() if v is not None]
 
 
 def model_component(m: dict, entry: dict) -> dict:
@@ -102,7 +102,7 @@ def main() -> int:
         "serialNumber": f"urn:uuid:{uuid.uuid4()}",
         "version": 1,
         "metadata": {
-            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
             "component": {
                 "type": "application",
                 "bom-ref": app_ref,

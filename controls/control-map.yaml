@@ -67,6 +67,14 @@ gates:
     mitre_atlas: [AML.T0034 Cost Harvesting, AML.T0029 Denial of ML Service]
     nist_800_53: [SA-11, SC-5]
 
+  iac:
+    name: Terraform fmt/validate + Checkov IAM scan with negative and mutation controls
+    evidence: gate-results/checkov.json
+    nist_ai_rmf: [GOVERN 6.1, MANAGE 2.4]
+    nist_ai_600_1: [Information Security]
+    owasp_llm: [LLM03 Supply Chain]
+    nist_800_53: [AC-6, CM-2, CM-6, IA-5, SA-11]
+
   mlbom:
     name: CycloneDX ML-BOM — model, card, approval and data lineage hashes
     evidence: ai-system.mlbom.json

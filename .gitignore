@@ -9,3 +9,10 @@ promptfoo-results*.json
 .promptfoo/
 policy/data/today.yaml
 *.mlbom.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log

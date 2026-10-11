@@ -3,7 +3,7 @@
 # cannot bypass the registry by importing a different SDK or calling a model
 # endpoint directly.
 rules:
-  - id: aigg-unapproved-ai-sdk
+  - id: aap-unapproved-ai-sdk
     message: >
       Direct use of an AI provider SDK that is not on the approved list
       (policy/data/approved-providers.yaml). Route model calls through
@@ -22,7 +22,7 @@ rules:
       - pattern: from google import genai
       - pattern: from langchain_openai import $X
 
-  - id: aigg-bedrock-outside-gateway
+  - id: aap-bedrock-outside-gateway
     message: >
       Bedrock runtime client created outside app/src/llm.py. All model calls go
       through the single gateway so the model ID is checked against the registry.
@@ -35,7 +35,7 @@ rules:
       nist-ai-rmf: GOVERN 1.6
     pattern: boto3.client("bedrock-runtime", ...)
 
-  - id: aigg-hardcoded-model-endpoint
+  - id: aap-hardcoded-model-endpoint
     message: Hardcoded third-party model API endpoint. Use the approved gateway.
     severity: ERROR
     languages: [python]
@@ -43,7 +43,7 @@ rules:
       owasp-llm: LLM03 Supply Chain
     pattern-regex: https://(api\.openai\.com|generativelanguage\.googleapis\.com|api\.cohere\.ai|api\.mistral\.ai)
 
-  - id: aigg-unsafe-model-deserialization
+  - id: aap-unsafe-model-deserialization
     message: >
       Loading a model or object with pickle can execute arbitrary code. Use
       safetensors/ONNX, or torch.load(..., weights_only=True).
@@ -59,7 +59,7 @@ rules:
       - pattern: dill.load(...)
       - pattern: torch.load(..., weights_only=False, ...)
 
-  - id: aigg-remote-model-download
+  - id: aap-remote-model-download
     message: >
       Downloading model weights at runtime bypasses the ModelScan and signing
       gates. Bake reviewed weights into the image under /models instead.

@@ -1,0 +1,14 @@
+# Lint/format config for app/ and scripts/ (used by pre-commit).
+line-length = 120
+target-version = "py312"
+
+[lint]
+# pyflakes, pycodestyle, isort, pyupgrade, bugbear, bandit-lite security checks
+select = ["F", "E", "W", "I", "UP", "B", "S"]
+ignore = [
+  "S101",  # assert is how pytest works
+  "S603",  # subprocess without shell — no subprocess calls with untrusted input here
+]
+
+[lint.per-file-ignores]
+"**/tests/**" = ["S"]

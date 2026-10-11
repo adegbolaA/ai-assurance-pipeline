@@ -17,7 +17,7 @@ import json
 import os
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -31,7 +31,7 @@ def gate_status(name: str, path: Path) -> tuple[str, dict]:
     if not path.is_file():
         return "missing", {}
     if path.suffix == ".xml":
-        suite = ET.parse(path).getroot()
+        suite = ET.parse(path).getroot()  # noqa: S314 — JUnit XML written by our own CI job, not untrusted input
         suite = suite if suite.tag == "testsuite" else suite.find("testsuite")
         failed = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
         detail = {k: suite.get(k) for k in ("tests", "failures", "errors", "skipped")}
@@ -43,12 +43,35 @@ def gate_status(name: str, path: Path) -> tuple[str, dict]:
     if name == "code-policy":  # semgrep --json
         errs = [r["check_id"] for r in doc.get("results", [])]
         return ("pass" if not errs else "fail"), {"findings": errs}
+    if name == "iac":  # checkov -o json (one object, or a list per framework)
+        docs = doc if isinstance(doc, list) else [doc]
+        failed = [c["check_id"] for d in docs for c in d.get("results", {}).get("failed_checks", [])]
+        passed = sum(d.get("summary", {}).get("passed", 0) for d in docs)
+        return ("pass" if not failed else "fail"), {"checks_passed": passed, "failed": failed}
     if name == "evals":
-        detail = {k: doc.get(k) for k in ("backend", "accuracy_rate", "tests_total", "tests_passed", "open_findings", "resolved_findings", "blocking")}
+        detail = {
+            k: doc.get(k)
+            for k in (
+                "backend",
+                "accuracy_rate",
+                "tests_total",
+                "tests_passed",
+                "open_findings",
+                "resolved_findings",
+                "blocking",
+            )
+        }
         return ("pass" if doc.get("passed") else "fail"), detail
     if "passed" in doc:
         return ("pass" if doc["passed"] else "fail"), {k: v for k, v in doc.items() if k not in ("sources", "results")}
     return "recorded", doc
+
+
+def run_url() -> str | None:
+    env = os.environ
+    if not env.get("GITHUB_RUN_ID"):
+        return None
+    return f"{env['GITHUB_SERVER_URL']}/{env['GITHUB_REPOSITORY']}/actions/runs/{env['GITHUB_RUN_ID']}"
 
 
 def main() -> int:
@@ -91,11 +114,9 @@ def main() -> int:
         "release": {
             "version": args.version,
             "commit": os.environ.get("GITHUB_SHA"),
-            "workflow_run": f"{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{os.environ.get('GITHUB_RUN_ID')}"
-            if os.environ.get("GITHUB_RUN_ID")
-            else None,
+            "workflow_run": run_url(),
             "image": os.environ.get("IMAGE_REF"),
-            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         },
         "gates": gates,
         "poam": [dict(f, status="open" if f["id"] in open_ids else "pending-closure") for f in findings],
@@ -132,12 +153,13 @@ def main() -> int:
         "|---|---|---|---|---|---|---|",
     ]
     for f in evidence["poam"]:
-        poam.append(
-            f"| {f['id']} | {f['title']} | {f['owasp_llm']} | {f['severity']} | {f['milestone']} | {f['owner']} | {f['status']} |"
-        )
+        cells = [f["id"], f["title"], f["owasp_llm"], f["severity"], f["milestone"], f["owner"], f["status"]]
+        poam.append("| " + " | ".join(str(c) for c in cells) + " |")
     (out / "poam.md").write_text("\n".join(poam) + "\n", encoding="utf-8")
 
-    failed = [n for n, g in gates.items() if g["status"] in ("fail", "missing") and n not in ("signing", "human-approval")]
+    failed = [
+        n for n, g in gates.items() if g["status"] in ("fail", "missing") and n not in ("signing", "human-approval")
+    ]
     print(f"evidence -> {out}  ({len(gates)} gates, {len(evidence['poam'])} POA&M items)")
     for n in failed:
         print(f"::warning::gate {n} is {gates[n]['status']}")
