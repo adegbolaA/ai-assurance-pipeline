@@ -10,7 +10,7 @@ from pathlib import Path
 
 CORPUS_DIR = Path(__file__).parents[1] / "corpus"
 _word = re.compile(r"[a-z0-9]+")
-_stop = {"the", "a", "an", "and", "or", "of", "to", "in", "is", "for", "on", "what", "how", "are", "do", "does", "i", "my", "be", "it"}
+_stop = set("the a an and or of to in is for on what how are do does i my be it".split())
 
 
 @dataclass

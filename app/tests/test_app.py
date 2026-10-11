@@ -6,7 +6,6 @@ import pytest
 os.environ["LLM_BACKEND"] = "mock"
 
 from fastapi.testclient import TestClient  # noqa: E402
-
 from src.llm import UnapprovedModelError, assert_model_approved  # noqa: E402
 from src.main import app  # noqa: E402
 from src.retriever import load_corpus, retrieve  # noqa: E402
