@@ -11,6 +11,7 @@ Built on [`hardened-base`](https://github.com/platform-base-images/hardened-base
 ```mermaid
 flowchart LR
     PR([Pull request]) --> G
+    PR --> I
 
     subgraph G["ai-gates.yml — every PR"]
         direction TB
@@ -22,7 +23,12 @@ flowchart LR
         E["Evals — mock model<br/>promptfoo red-team + accuracy<br/>Trivy image gate"]
     end
 
+    subgraph I["iac.yml — every PR (skips if infra/ unchanged)"]
+        T["Terraform fmt + validate<br/>Checkov IAM scan<br/>negative + mutation controls"]
+    end
+
     G --> MERGE([Merge to main])
+    I --> MERGE
 
     subgraph R["release.yml"]
         direction TB
@@ -52,6 +58,7 @@ flowchart LR
 | Red-team & accuracy | Any security failure **not** on the POA&M; untagged accuracy below threshold | promptfoo | `evals.json` |
 | Runtime enforcement | Service refuses to start with an unregistered model | app + pytest | `pytest.xml` |
 | Container | Critical/high CVEs | Trivy | job log |
+| IaC (`iac.yml`) | Unformatted/invalid Terraform; any failed Checkov check on `infra/` — e.g. IAM wildcards, an OIDC trust not pinned to this repo | Terraform, Checkov | `iac.json` |
 | Human approval | High-impact release without board sign-off | GitHub Environment | `approval.json` |
 | Provenance | — (always produced) | Cosign, CycloneDX ML-BOM | `signing.json`, `ai-system.mlbom.json` |
 
@@ -114,7 +121,7 @@ conftest test --combine ai-system.yaml models/registry.yaml --policy policy --da
 | Secret `GHCR_TOKEN` | PAT: `read:packages` on platform-base-images, `write:packages` here |
 | Environment `ai-eval` | Variable `AWS_EVAL_ROLE_ARN` = `terraform output eval_role_arn`; deployment branches: `main` only |
 | Environment `ai-high-impact` | Required reviewers = AI governance board; deployment branches: `main` only |
-| Branch protection | Require **AI Gate Summary**; require CODEOWNERS review |
+| Branch protection | Require **AI Gate Summary** and **IaC Summary**; require CODEOWNERS review |
 
 ## AWS access (`infra/aws`)
 

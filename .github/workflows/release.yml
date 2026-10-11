@@ -1,6 +1,6 @@
 name: Release
 
-# Every gate from ai-gates.yml, then:
+# Every gate from ai-gates.yml and iac.yml, then:
 #   candidate  build + push the image once, by digest
 #   live-evals red-team that exact digest against the real Bedrock model
 #   approval   AI governance board sign-off when ai-system.yaml says high-impact
@@ -35,9 +35,13 @@ jobs:
     uses: ./.github/workflows/ai-gates.yml
     secrets: inherit
 
+  iac:
+    name: IaC
+    uses: ./.github/workflows/iac.yml
+
   candidate:
     name: Build candidate
-    needs: gates
+    needs: [gates, iac]
     runs-on: ubuntu-latest
     permissions:
       contents: read

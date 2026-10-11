@@ -1,0 +1,104 @@
+name: IaC Gates
+
+# Terraform for the release evals' AWS access (infra/aws). Runs on every PR and
+# is called by release.yml, which puts gate-results/iac.json in the evidence.
+#
+# On PRs it always triggers but skips the Terraform work when nothing under
+# infra/ (or the gate itself) changed. "IaC Summary" therefore always reports a
+# result, so it can be a required check without blocking unrelated PRs —
+# a workflow-level `paths:` filter would leave a required check pending forever.
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iac-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect IaC changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      iac: ${{ steps.filter.outputs.iac }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            iac:
+              - 'infra/**'
+              - 'scripts/iac_gate.sh'
+              - '.github/workflows/iac.yml'
+
+  terraform:
+    name: Terraform + Checkov
+    needs: changes
+    # Non-PR runs (release, manual) skip `changes` and always scan.
+    if: >-
+      always() &&
+      (needs.changes.result == 'skipped' || needs.changes.outputs.iac == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff infra
+
+      - name: terraform validate (no backend, no credentials)
+        working-directory: infra/aws
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install checkov==3.3.26
+
+      - name: Checkov — negative, mutation and real-stack scans
+        run: bash scripts/iac_gate.sh
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gate-iac
+          path: gate-results/
+
+  summary:
+    name: IaC Summary
+    runs-on: ubuntu-latest
+    needs: [changes, terraform]
+    if: always()
+    steps:
+      - name: Evaluate results
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          IAC: ${{ needs.changes.outputs.iac }}
+          TERRAFORM: ${{ needs.terraform.result }}
+        run: |
+          echo "changes: $CHANGES (iac changed: ${IAC:-n/a})  terraform: $TERRAFORM"
+          if [[ "$TERRAFORM" == "success" ]]; then
+            echo "IaC gates passed."
+          elif [[ "$TERRAFORM" == "skipped" && "$CHANGES" == "success" && "$IAC" == "false" ]]; then
+            echo "No IaC changes in this PR — Terraform gates skipped."
+          else
+            echo "::error::IaC gates did not pass (terraform: $TERRAFORM, changes: $CHANGES)"
+            exit 1
+          fi
