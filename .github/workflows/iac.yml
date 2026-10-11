@@ -93,12 +93,14 @@ jobs:
 
           # Mutation: the real trust policy minus its repo-subject condition must
           # be flagged too. Proves Checkov can see our policy — it silently skips
-          # CKV_AWS_358 when it cannot resolve the principal.
+          # CKV_AWS_358 when it cannot resolve the principal. The CKV_AWS_358
+          # skip in main.tf (a parsing false positive) is removed first.
           mkdir -p "$RUNNER_TEMP/mutant"
           cp infra/aws/*.tf "$RUNNER_TEMP/mutant/"
+          sed -i '/checkov:skip=CKV_AWS_358/d' "$RUNNER_TEMP/mutant/main.tf"
           perl -0pi -e 's/\n    condition \{\n      test     = "StringEquals"\n      variable = "\$\{local\.oidc_host\}:sub"\n.*?\n    \}\n/\n/s' "$RUNNER_TEMP/mutant/main.tf"
-          if grep -q ':sub"' "$RUNNER_TEMP/mutant/main.tf"; then
-            echo "::error::Mutation did not apply — update the pattern in iac.yml to match the :sub condition in infra/aws/main.tf"
+          if grep -qE ':sub"|checkov:skip=CKV_AWS_358' "$RUNNER_TEMP/mutant/main.tf"; then
+            echo "::error::Mutation did not apply — update the patterns in iac.yml to match the :sub condition and CKV_AWS_358 skip in infra/aws/main.tf"
             exit 1
           fi
           expect_fail "$RUNNER_TEMP/mutant" CKV_AWS_358 "infra/aws with its :sub condition removed"
