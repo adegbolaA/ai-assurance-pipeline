@@ -112,9 +112,27 @@ conftest test --combine ai-system.yaml models/registry.yaml --policy policy --da
 | Setting | Value |
 |---|---|
 | Secret `GHCR_TOKEN` | PAT: `read:packages` on platform-base-images, `write:packages` here |
-| Environment `ai-eval` | Variable `AWS_EVAL_ROLE_ARN` — OIDC role allowed `bedrock:InvokeModel` on the registered model only |
-| Environment `ai-high-impact` | Required reviewers = AI governance board |
+| Environment `ai-eval` | Variable `AWS_EVAL_ROLE_ARN` = `terraform output eval_role_arn`; deployment branches: `main` only |
+| Environment `ai-high-impact` | Required reviewers = AI governance board; deployment branches: `main` only |
 | Branch protection | Require **AI Gate Summary**; require CODEOWNERS review |
+
+## AWS access (`infra/aws`)
+
+Terraform for the release evals' AWS access — no long-lived keys anywhere:
+
+- GitHub OIDC identity provider (account-wide, `prevent_destroy`)
+- Role `ai-governance-gate-bedrock-eval`, trusting **only** the exact subject `repo:adegbolaA/ai-governance-gate:environment:ai-eval`. The `ai-eval` environment is restricted to `main`, so branches, PRs and forks cannot assume it
+- Inline policy: `bedrock:InvokeModel` on the models in `var.model_ids` — keep it in step with the approved entries in `models/registry.yaml`
+
+```bash
+cd infra/aws
+terraform init
+terraform plan    # existing resources are adopted via imports.tf
+terraform apply
+terraform output eval_role_arn
+```
+
+State is local; move to an S3 backend (`use_lockfile = true`) before sharing the stack.
 
 ## Layout
 
@@ -127,6 +145,7 @@ evals/                       promptfoo config, known-findings.yaml (POA&M)
 scripts/                     PII scan, ModelScan gate, eval gate, ML-BOM, evidence builder
 controls/control-map.yaml    gate → framework control mapping
 docs/impact-assessment.md    M-25-21 AI impact assessment
+infra/aws/                   Terraform: GitHub OIDC provider, Bedrock eval role
 ```
 
 ## Not covered yet

@@ -9,14 +9,14 @@ name: Release
 #
 # Repo setup (Settings → Environments):
 #   ai-eval         variable AWS_EVAL_ROLE_ARN — OIDC role allowed bedrock:InvokeModel
-#                   on the registered model only
+#                   on the registered model only (infra/aws, Terraform)
 #   ai-high-impact  required reviewers = the AI governance board
 # Secret GHCR_TOKEN: PAT with read:packages for platform-base-images, write:packages here.
 
 on:
   push:
     branches: [main]
-    paths-ignore: ["**.md", "docs/**"]
+    paths-ignore: ["**.md", "docs/**", "infra/**"]
   workflow_dispatch:
 
 permissions:
