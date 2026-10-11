@@ -38,6 +38,10 @@ jobs:
   iac:
     name: IaC
     uses: ./.github/workflows/iac.yml
+    permissions:            # a called workflow cannot exceed what the caller grants
+      contents: read
+      pull-requests: read
+      security-events: write
 
   candidate:
     name: Build candidate

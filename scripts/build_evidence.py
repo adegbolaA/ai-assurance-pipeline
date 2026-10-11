@@ -43,6 +43,11 @@ def gate_status(name: str, path: Path) -> tuple[str, dict]:
     if name == "code-policy":  # semgrep --json
         errs = [r["check_id"] for r in doc.get("results", [])]
         return ("pass" if not errs else "fail"), {"findings": errs}
+    if name == "iac":  # checkov -o json (one object, or a list per framework)
+        docs = doc if isinstance(doc, list) else [doc]
+        failed = [c["check_id"] for d in docs for c in d.get("results", {}).get("failed_checks", [])]
+        passed = sum(d.get("summary", {}).get("passed", 0) for d in docs)
+        return ("pass" if not failed else "fail"), {"checks_passed": passed, "failed": failed}
     if name == "evals":
         detail = {
             k: doc.get(k)

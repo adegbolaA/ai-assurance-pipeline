@@ -69,7 +69,7 @@ gates:
 
   iac:
     name: Terraform fmt/validate + Checkov IAM scan with negative and mutation controls
-    evidence: gate-results/iac.json
+    evidence: gate-results/checkov.json
     nist_ai_rmf: [GOVERN 6.1, MANAGE 2.4]
     nist_ai_600_1: [Information Security]
     owasp_llm: [LLM03 Supply Chain]

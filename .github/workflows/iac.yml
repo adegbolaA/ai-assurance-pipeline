@@ -1,7 +1,7 @@
 name: IaC Gates
 
 # Terraform for the release evals' AWS access (infra/aws). Runs on every PR and
-# is called by release.yml, which puts gate-results/iac.json in the evidence.
+# is called by release.yml, which puts gate-results/checkov.json in the evidence.
 #
 # On PRs it always triggers but skips the Terraform work when nothing under
 # infra/ (or the gate itself) changed. "IaC Summary" therefore always reports a
@@ -39,12 +39,14 @@ jobs:
           filters: |
             iac:
               - 'infra/**'
-              - 'scripts/iac_gate.sh'
               - '.github/workflows/iac.yml'
 
   terraform:
     name: Terraform + Checkov
     needs: changes
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to code scanning
     # Non-PR runs (release, manual) skip `changes` and always scan.
     if: >-
       always() &&
@@ -67,13 +69,59 @@ jobs:
           terraform init -backend=false -input=false
           terraform validate
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-      - run: pip install checkov==3.3.26
+      # Negative controls: Checkov must flag known-bad Terraform before its
+      # verdict on infra/aws counts. Same image (and version) as checkov-action.
+      - name: Checkov negative + mutation controls
+        env:
+          CHECKOV_IMAGE: ghcr.io/bridgecrewio/checkov:3.3.26@sha256:8e63f217cb084f1c1a067326a9cf6e37d54bdc82e5822210d50ca4e2f647dd93
+        run: |
+          expect_fail() { # <abs dir> <check id> <description>
+            set +e
+            out=$(docker run --rm -v "$1:/tf:ro" "$CHECKOV_IMAGE" -d /tf --framework terraform --check "$2" --quiet --compact 2>&1)
+            rc=$?
+            set -e
+            if [[ $rc -ne 1 ]] || ! grep -q "$2" <<<"$out"; then
+              echo "$out"
+              echo "::error::$2 did not flag $3 (checkov exit $rc)"
+              exit 1
+            fi
+            echo "✓ $2 flags $3"
+          }
 
-      - name: Checkov — negative, mutation and real-stack scans
-        run: bash scripts/iac_gate.sh
+          expect_fail "$GITHUB_WORKSPACE/infra/tests/negative/admin_policy" CKV_AWS_62 "an admin *:* policy"
+          expect_fail "$GITHUB_WORKSPACE/infra/tests/negative/oidc_any_repo" CKV_AWS_358 "an OIDC trust open to any repo"
+
+          # Mutation: the real trust policy minus its repo-subject condition must
+          # be flagged too. Proves Checkov can see our policy — it silently skips
+          # CKV_AWS_358 when it cannot resolve the principal.
+          mkdir -p "$RUNNER_TEMP/mutant"
+          cp infra/aws/*.tf "$RUNNER_TEMP/mutant/"
+          perl -0pi -e 's/\n    condition \{\n      test     = "StringEquals"\n      variable = "\$\{local\.oidc_host\}:sub"\n.*?\n    \}\n/\n/s' "$RUNNER_TEMP/mutant/main.tf"
+          if grep -q ':sub"' "$RUNNER_TEMP/mutant/main.tf"; then
+            echo "::error::Mutation did not apply — update the pattern in iac.yml to match the :sub condition in infra/aws/main.tf"
+            exit 1
+          fi
+          expect_fail "$RUNNER_TEMP/mutant" CKV_AWS_358 "infra/aws with its :sub condition removed"
+
+      - run: mkdir -p gate-results
+
+      - name: Checkov — scan infra/ (negative fixtures skipped)
+        uses: bridgecrewio/checkov-action@c13aafd679d3814a25067d10fcaf98c4f7594931 # v12.3131.0 (checkov 3.3.26)
+        with:
+          directory: infra
+          framework: terraform
+          skip_path: infra/tests
+          quiet: true
+          compact: true
+          output_format: cli,sarif,json
+          output_file_path: console,results.sarif,gate-results/checkov.json
+
+      - name: Upload findings to code scanning
+        if: always() && hashFiles('results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: results.sarif
+          category: checkov-iac
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

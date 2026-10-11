@@ -58,7 +58,7 @@ flowchart LR
 | Red-team & accuracy | Any security failure **not** on the POA&M; untagged accuracy below threshold | promptfoo | `evals.json` |
 | Runtime enforcement | Service refuses to start with an unregistered model | app + pytest | `pytest.xml` |
 | Container | Critical/high CVEs | Trivy | job log |
-| IaC (`iac.yml`) | Unformatted/invalid Terraform; any failed Checkov check on `infra/` — e.g. IAM wildcards, an OIDC trust not pinned to this repo | Terraform, Checkov | `iac.json` |
+| IaC (`iac.yml`) | Unformatted/invalid Terraform; any failed Checkov check on `infra/` — e.g. IAM wildcards, an OIDC trust not pinned to this repo | Terraform, Checkov (+ SARIF to code scanning) | `checkov.json` |
 | Human approval | High-impact release without board sign-off | GitHub Environment | `approval.json` |
 | Provenance | — (always produced) | Cosign, CycloneDX ML-BOM | `signing.json`, `ai-system.mlbom.json` |
 
