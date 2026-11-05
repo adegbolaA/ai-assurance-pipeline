@@ -5,7 +5,7 @@
 # BASE_IMAGE is the hardened python-ml-base, pinned to the multi-arch index
 # digest that hardened-base's release signed and SBOM-attested. Override for
 # local builds with --build-arg BASE_IMAGE=python-ml-base:local.
-ARG BASE_IMAGE=ghcr.io/platform-base-images/python-ml-base:1.0.0@sha256:0de947f5a280292c7d63fba2af2967c7444d662e7140476e7d8b2d4a665a7d4b
+ARG BASE_IMAGE=ghcr.io/platform-base-images/python-ml-base:1.0.3@sha256:882ffec4b400a4c4a0c493ce6944b2260cd90752400c8354948e6f33fd2060d7
 
 FROM ${BASE_IMAGE} AS builder
 USER root
